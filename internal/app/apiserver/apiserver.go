@@ -29,7 +29,7 @@ func (s *APIServer) Start() error {
 	if err := s.configureLogger(); err != nil {
 		return err
 	}
-	s.logger.Info("starting API server")
+	s.logger.Info("starting API server", s.config.BindAddr)
 
 	s.configureRouter()
 
