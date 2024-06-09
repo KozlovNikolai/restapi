@@ -21,13 +21,13 @@ func main() {
 	flag.Parse()
 
 	config := apiserver.NewConfig()
-	_, err := toml.DecodeFile(configPath, config)
+	_, err := toml.DecodeFile(configPath, config) //заполнить конфиг
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	s := apiserver.New(config)
-	if err := s.Start(); err != nil {
+	s := apiserver.New(config)        //создать сервер
+	if err := s.Start(); err != nil { //запустить сервер
 		log.Fatal(err)
 	}
 }

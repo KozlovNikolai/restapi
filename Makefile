@@ -15,8 +15,6 @@ runtestdb:
 	docker run --name restapi-test-pg-13.3 -p 35432:5432 -e POSTGRES_USER=dbuser -e POSTGRES_PASSWORD=dbpass -e POSTGRES_DB=restapi_test -d postgres:13.3
 
 
-LOCAL_BIN:=$(CURDIR)/bin
-
 LOCAL_MIGRATION_DIR=./migrations
 LOCAL_MIGRATION_DSN="host=localhost port=25432 dbname=restapi_dev user=dbuser password=dbpass sslmode=disable"
 LOCAL_MIGRATION_DSN_TEST="host=localhost port=35432 dbname=restapi_test user=dbuser password=dbpass sslmode=disable"
@@ -44,3 +42,11 @@ local-test-migration-up:
 
 local-test-migration-down:
 	goose -dir ${LOCAL_MIGRATION_DIR} postgres ${LOCAL_MIGRATION_DSN_TEST} down -v
+
+LOCAL_BIN:=$(CURDIR)/bin
+
+install-golangci-lint:
+	GOBIN=$(LOCAL_BIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3
+
+lint:
+	GOBIN=$(LOCAL_BIN) $(LOCAL_BIN)/golangci-lint run ./... --config .golangci.pipeline.yaml

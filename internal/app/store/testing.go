@@ -7,10 +7,10 @@ import (
 )
 
 // TestStore ...
-func TestStore(t *testing.T, databasURL string) (*Store, func(...string)) {
+func TestStore(t *testing.T, databaseURL string) (*Store, func(...string)) {
 	t.Helper()
 	config := NewConfig()
-	config.DatabaseURL = databasURL
+	config.DatabaseURL = databaseURL
 	s := New(config)
 
 	if err := s.Open(); err != nil {
@@ -22,6 +22,6 @@ func TestStore(t *testing.T, databasURL string) (*Store, func(...string)) {
 				t.Fatal(err)
 			}
 		}
-		s.Close()
+		_ = s.Close()
 	}
 }

@@ -37,8 +37,9 @@ func (s *Store) Open() error {
 }
 
 // Close ...
-func (s *Store) Close() {
-	s.db.Close()
+func (s *Store) Close() error {
+	err := s.db.Close()
+	return err
 }
 
 // User ...

@@ -3,6 +3,7 @@ package apiserver
 import (
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/KozlovNikolai/restapi/internal/app/store"
 	"github.com/gorilla/mux"
@@ -39,8 +40,13 @@ func (s *APIServer) Start() error {
 	}
 
 	s.logger.Info("starting API server", s.config.BindAddr)
-
-	return http.ListenAndServe(s.config.BindAddr, s.router)
+	srv := &http.Server{
+		Addr:         s.config.BindAddr,
+		Handler:      s.router,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+	return srv.ListenAndServe()
 }
 
 // configureLogger ...
@@ -63,6 +69,7 @@ func (s *APIServer) configureRouter() {
 	s.logger.Info("configure Router is done.")
 }
 
+// configureStore ...
 func (s *APIServer) configureStore() error {
 	st := store.New(s.config.Store)
 	if err := st.Open(); err != nil {
@@ -78,6 +85,6 @@ func (s *APIServer) configureStore() error {
 func (s *APIServer) handleHello() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Info("the '/hello' handler has worked")
-		io.WriteString(w, "Hello")
+		_, _ = io.WriteString(w, "Hello")
 	}
 }
