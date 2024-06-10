@@ -20,28 +20,28 @@ LOCAL_MIGRATION_DSN="host=localhost port=25432 dbname=restapi_dev user=dbuser pa
 LOCAL_MIGRATION_DSN_TEST="host=localhost port=35432 dbname=restapi_test user=dbuser password=dbpass sslmode=disable"
 
 install-deps:
-	go install github.com/pressly/goose/v3/cmd/goose@v3.14.0
+	GOBIN=$(LOCAL_BIN) go install github.com/pressly/goose/v3/cmd/goose@v3.14.0
 
 create-migration:
-	goose -dir ${LOCAL_MIGRATION_DIR} create create_users sql
+	$(LOCAL_BIN)/goose -dir ${LOCAL_MIGRATION_DIR} create create_users sql
 
 local-migration-status:
-	goose -dir ${LOCAL_MIGRATION_DIR} postgres ${LOCAL_MIGRATION_DSN} status -v
+	$(LOCAL_BIN)/goose -dir ${LOCAL_MIGRATION_DIR} postgres ${LOCAL_MIGRATION_DSN} status -v
 
 local-migration-up:
-	goose -dir ${LOCAL_MIGRATION_DIR} postgres ${LOCAL_MIGRATION_DSN} up -v
+	$(LOCAL_BIN)/goose -dir ${LOCAL_MIGRATION_DIR} postgres ${LOCAL_MIGRATION_DSN} up -v
 
 local-migration-down:
-	goose -dir ${LOCAL_MIGRATION_DIR} postgres ${LOCAL_MIGRATION_DSN} down -v
+	$(LOCAL_BIN)/goose -dir ${LOCAL_MIGRATION_DIR} postgres ${LOCAL_MIGRATION_DSN} down -v
 
 local-test-migration-status:
-	goose -dir ${LOCAL_MIGRATION_DIR} postgres ${LOCAL_MIGRATION_DSN_TEST} status -v
+	$(LOCAL_BIN)/goose -dir ${LOCAL_MIGRATION_DIR} postgres ${LOCAL_MIGRATION_DSN_TEST} status -v
 
 local-test-migration-up:
-	goose -dir ${LOCAL_MIGRATION_DIR} postgres ${LOCAL_MIGRATION_DSN_TEST} up -v
+	$(LOCAL_BIN)/goose -dir ${LOCAL_MIGRATION_DIR} postgres ${LOCAL_MIGRATION_DSN_TEST} up -v
 
 local-test-migration-down:
-	goose -dir ${LOCAL_MIGRATION_DIR} postgres ${LOCAL_MIGRATION_DSN_TEST} down -v
+	$(LOCAL_BIN)/goose -dir ${LOCAL_MIGRATION_DIR} postgres ${LOCAL_MIGRATION_DSN_TEST} down -v
 
 LOCAL_BIN:=$(CURDIR)/bin
 
