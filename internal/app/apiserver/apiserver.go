@@ -1,90 +1,32 @@
 package apiserver
 
 import (
-	"io"
+	"database/sql"
 	"net/http"
-	"time"
 
-	"github.com/KozlovNikolai/restapi/internal/app/store"
-	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
+	"github.com/KozlovNikolai/restapi/internal/app/store/sqlstore"
 )
 
-// APIServer ...
-type APIServer struct {
-	config *Config
-	logger *logrus.Logger
-	router *mux.Router
-	store  *store.Store
-}
-
-// New ...
-func New(config *Config) *APIServer {
-	return &APIServer{
-		config: config,
-		logger: logrus.New(),
-		router: mux.NewRouter(),
-	}
-}
-
-// Start ...
-func (s *APIServer) Start() error {
-	if err := s.configureLogger(); err != nil {
-		return err
-	}
-
-	s.configureRouter()
-
-	if err := s.configureStore(); err != nil {
-		return err
-	}
-
-	s.logger.Info("starting API server", s.config.BindAddr)
-	srv := &http.Server{
-		Addr:         s.config.BindAddr,
-		Handler:      s.router,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-	}
-	return srv.ListenAndServe()
-}
-
-// configureLogger ...
-func (s *APIServer) configureLogger() error {
-	level, err := logrus.ParseLevel(s.config.LogLevel)
+func Start(config *Config) error {
+	db, err := newDB(config.DatabaseURL)
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 
-	s.logger.SetFormatter(&logrus.TextFormatter{TimestampFormat: "02-01-2006 15:04:05", FullTimestamp: true})
-	s.logger.SetLevel(level)
-
-	s.logger.Info("configure Logger is done, logger level is: ", s.config.LogLevel)
-	return nil
+	store := sqlstore.New(db)
+	srv := newServer(store)
+	return http.ListenAndServe(config.BindAddr, srv)
 }
 
-// configureRouter ...
-func (s *APIServer) configureRouter() {
-	s.router.HandleFunc("/hello", s.handleHello())
-	s.logger.Info("configure Router is done.")
-}
-
-// configureStore ...
-func (s *APIServer) configureStore() error {
-	st := store.New(s.config.Store)
-	if err := st.Open(); err != nil {
-		return err
+func newDB(databaseURL string) (*sql.DB, error) {
+	db, err := sql.Open("postgres", databaseURL)
+	if err != nil {
+		return nil, err
 	}
-	s.store = st
-	s.logger.Info("configure Store is done, store path is: ", s.config.Store.DatabaseURL)
 
-	return nil
-}
-
-// handleHello ...
-func (s *APIServer) handleHello() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		s.logger.Info("the '/hello' handler has worked")
-		_, _ = io.WriteString(w, "Hello")
+	if err := db.Ping(); err != nil {
+		return nil, err
 	}
+	return db, nil
 }
