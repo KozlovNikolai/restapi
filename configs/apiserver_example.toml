@@ -1,3 +1,4 @@
 bind_addr = ":8080"
 log_level = "debug"
 database_url = "postgres://dbuser:dbpass@localhost:25432/restapi_dev?sslmode=disable"
+session_key = "<our secret key>"

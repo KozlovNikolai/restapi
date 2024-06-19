@@ -8,7 +8,11 @@ import (
 	"github.com/KozlovNikolai/restapi/internal/app/store"
 	"github.com/KozlovNikolai/restapi/model"
 	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
+	"github.com/gorilla/sessions"
+)
+
+const (
+	sessionName = "gopherSchool"
 )
 
 var (
@@ -17,15 +21,17 @@ var (
 
 type server struct {
 	router *mux.Router
-	logger *logrus.Logger
-	store  store.Store
+	// logger      *logrus.Logger
+	store       store.Store
+	sessonStore sessions.Store
 }
 
-func newServer(store store.Store) *server {
+func newServer(store store.Store, sessionStore sessions.Store) *server {
 	s := &server{
 		router: mux.NewRouter(),
-		logger: logrus.New(),
-		store:  store,
+		// logger: logrus.New(),
+		store:       store,
+		sessonStore: sessionStore,
 	}
 
 	s.configureRouter()
@@ -80,6 +86,18 @@ func (s *server) handleSessionsCreate() http.HandlerFunc {
 		u, err := s.store.User().FindByEmail(req.Email)
 		if err != nil || !u.ComparePassword(req.Password) {
 			s.error(w, r, http.StatusUnauthorized, errIncorrectEmailOrPassword)
+			return
+		}
+
+		session, err := s.sessonStore.Get(r, sessionName)
+		if err != nil {
+			s.error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		session.Values["user_id"] = u.ID
+		if err := s.sessonStore.Save(r, w, session); err != nil {
+			s.error(w, r, http.StatusInternalServerError, err)
 			return
 		}
 		s.respond(w, r, http.StatusOK, nil)
