@@ -17,11 +17,11 @@ func (r *UserRepository) Create(u *model.User) error {
 	if err := u.Validate(); err != nil {
 		return err
 	}
-
+	//fmt.Println("sqlstore.User.Create.Validate is PASS")
 	if err := u.BeforeCreate(); err != nil {
 		return err
 	}
-
+	//fmt.Println("sqlstore.User.Create.BeforeCreate is PASS")
 	return r.store.db.QueryRow(
 		"INSERT INTO users (email, encrypted_password) VALUES ($1, $2) RETURNING id",
 		u.Email,
@@ -29,7 +29,7 @@ func (r *UserRepository) Create(u *model.User) error {
 	).Scan(&u.ID)
 }
 
-// Find
+// Find ...
 func (r *UserRepository) Find(id int) (*model.User, error) {
 	u := &model.User{}
 	if err := r.store.db.QueryRow(
