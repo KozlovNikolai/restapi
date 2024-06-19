@@ -54,7 +54,9 @@ func TestServer_HandleUsersCreate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
 			b := &bytes.Buffer{}
-			json.NewEncoder(b).Encode(tc.payload)
+			if err := json.NewEncoder(b).Encode(tc.payload); err != nil {
+				t.Fatal()
+			}
 			req, _ := http.NewRequest(http.MethodPost, "/users", b)
 			s.ServeHTTP(rec, req)
 			assert.Equal(t, tc.expectedCode, rec.Code)
@@ -70,7 +72,9 @@ func TestServer_HandleUsersCreate(t *testing.T) {
 func TestServer_HandleSessionsCreate(t *testing.T) {
 	u := model.TestUser(t)
 	store := teststore.New()
-	store.User().Create(u)
+	if err := store.User().Create(u); err != nil {
+		t.Fatal()
+	}
 
 	s := newServer(store, sessions.NewCookieStore([]byte("secret")))
 	testCases := []struct {
@@ -112,7 +116,9 @@ func TestServer_HandleSessionsCreate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
 			b := &bytes.Buffer{}
-			json.NewEncoder(b).Encode(tc.payload)
+			if err := json.NewEncoder(b).Encode(tc.payload); err != nil {
+				t.Fatal(err)
+			}
 			req := httptest.NewRequest(http.MethodPost, "/sessions", b)
 			s.ServeHTTP(rec, req)
 			assert.Equal(t, tc.expectedCode, rec.Code)

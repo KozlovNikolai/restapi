@@ -3,6 +3,7 @@ package apiserver
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/KozlovNikolai/restapi/internal/app/store"
@@ -109,8 +110,11 @@ func (s *server) error(w http.ResponseWriter, r *http.Request, code int, err err
 }
 
 func (s *server) respond(w http.ResponseWriter, r *http.Request, code int, data interface{}) {
+	_ = r
 	w.WriteHeader(code)
 	if data != nil {
-		json.NewEncoder(w).Encode(data)
+		if err := json.NewEncoder(w).Encode(data); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
