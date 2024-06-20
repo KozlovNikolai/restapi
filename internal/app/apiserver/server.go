@@ -6,16 +6,21 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/KozlovNikolai/restapi/internal/app/store"
 	"github.com/KozlovNikolai/restapi/model"
+	"github.com/google/uuid"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
+	"github.com/sirupsen/logrus"
 )
 
 const (
 	sessionName        = "gopherSchool"
 	ctxKeyUser  ctxKey = iota
+	ctxKeyRequestID
 )
 
 var (
@@ -26,16 +31,16 @@ var (
 type ctxKey int8
 
 type server struct {
-	router *mux.Router
-	// logger      *logrus.Logger
+	router      *mux.Router
+	logger      *logrus.Logger
 	store       store.Store
 	sessonStore sessions.Store
 }
 
 func newServer(store store.Store, sessionStore sessions.Store) *server {
 	s := &server{
-		router: mux.NewRouter(),
-		// logger: logrus.New(),
+		router:      mux.NewRouter(),
+		logger:      logrus.New(),
 		store:       store,
 		sessonStore: sessionStore,
 	}
@@ -50,6 +55,9 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) configureRouter() {
+	s.router.Use(s.setReqestID)
+	s.router.Use(s.logRequest)
+	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"})))
 	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST")
 	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST")
 
@@ -57,6 +65,35 @@ func (s *server) configureRouter() {
 	private := s.router.PathPrefix("/private").Subrouter()
 	private.Use(s.authenticateUser)
 	private.HandleFunc("/whoami", s.handlerWhoami())
+}
+
+func (s *server) setReqestID(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		id := uuid.New().String()
+		rw.Header().Set("X-Request-ID", id)
+		next.ServeHTTP(rw, r.WithContext(context.WithValue(r.Context(), ctxKeyRequestID, id)))
+	})
+}
+
+func (s *server) logRequest(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		logger := s.logger.WithFields(logrus.Fields{
+			"remote_addr": req.RemoteAddr,
+			"request_id":  req.Context().Value(ctxKeyRequestID),
+		})
+		logger.Infof("started %s %s", req.Method, req.RequestURI)
+
+		start := time.Now()
+		w := &responseWriter{rw, http.StatusOK}
+		next.ServeHTTP(w, req)
+
+		logger.Infof(
+			"complited with %d %s in %v",
+			w.code,
+			http.StatusText(w.code),
+			time.Since(start),
+		)
+	})
 }
 
 func (s *server) authenticateUser(next http.Handler) http.Handler {
