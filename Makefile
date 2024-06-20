@@ -8,6 +8,31 @@ test:
 
 .DEFAULT_GOAL := build
 
+.PHONY: cover
+cover:
+	go test -short -count=1 -race -coverprofile=coverage.out ./...
+	go tool cover -func coverage.out
+	go tool cover -html coverage.out
+	rm coverage.out
+
+coverWithoutMocks:
+	go test -short -count=1 -race -coverprofile=cover.out.tmp ./...
+	cat cover.out.tmp | grep -v "_mock.go" > cover.out
+	rm cover.out.tmp
+	go tool cover -func cover.out
+	go tool cover -html cover.out
+	rm cover.out
+
+coverWithoutMocksBLL:
+	# go test ./... -coverpkg='./internal/app/.../bll/...' -coverprofile cover.out.tmp
+	go test -short -count=1 -race -coverpkg='./internal/app/...','./model/...' -coverprofile=cover.out.tmp ./...
+	cat cover.out.tmp | grep -v "_mock.go" > cover.out
+	rm cover.out.tmp
+	go tool cover -func cover.out
+	go tool cover -html cover.out
+	rm cover.out
+
+
 rundb:
 	docker run --name restapi-pg-13.3 -p 25432:5432 -e POSTGRES_USER=dbuser -e POSTGRES_PASSWORD=dbpass -e POSTGRES_DB=restapi_dev -d postgres:13.3
 
