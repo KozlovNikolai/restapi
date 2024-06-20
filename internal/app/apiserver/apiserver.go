@@ -3,7 +3,6 @@ package apiserver
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/KozlovNikolai/restapi/internal/app/store/sqlstore"
@@ -16,7 +15,7 @@ func Start(config *Config) error {
 	if err != nil {
 		return err
 	}
-	defer log.Fatal(db.Close())
+	defer db.Close()
 
 	store := sqlstore.New(db)
 	sessionStore := sessions.NewCookieStore([]byte(config.SessionKey))
